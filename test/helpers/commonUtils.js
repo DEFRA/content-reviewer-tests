@@ -1,3 +1,10 @@
+import fs from 'node:fs/promises'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
 export default class CommonUtils {
   static generateAutomationText(description) {
     const now = new Date()
@@ -17,5 +24,20 @@ export default class CommonUtils {
     const formattedTime = `${hours}:${minutes}:${seconds}${ampm}`
 
     return `Automation ${formattedDate} ${formattedTime}\n${description}`
+  }
+
+  static async getTextFromFile(fileName) {
+    try {
+      const filePath = path.join(__dirname, '..', 'testdata', `${fileName}.txt`)
+      const content = await fs.readFile(filePath, 'utf-8')
+
+      return content.trim()
+    } catch (error) {
+      throw new Error(`
+        Unable to read testdata file: ${fileName}.txt
+        Path: ${error.path || 'Not found'}
+        Reason: ${error.message}
+      `)
+    }
   }
 }
