@@ -1,10 +1,5 @@
 import { Page } from '../page-objects/page.js'
-import fs from 'node:fs'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+import CommonUtils from '../helpers/commonUtils.js'
 
 class HomePage extends Page {
   get uploadButton() {
@@ -63,6 +58,77 @@ class HomePage extends Page {
     return $('#error-summary-title')
   }
 
+  get signInLink() {
+    return $('a[href="/auth/login-page"].govuk-header__link')
+  }
+
+  get signOutLink() {
+    return $('a[href="/auth/logout"].govuk-header__link')
+  }
+
+  get loggedInUserEmail() {
+    return $('li.govuk-header__navigation-item')
+  }
+
+  async clickSignIn() {
+    await this.signInLink.waitForClickable()
+    await this.signInLink.click()
+  }
+
+  async clickSignOut() {
+    await this.signOutLink.waitForClickable()
+    await this.signOutLink.click()
+  }
+
+  async getLoggedInUser() {
+    await this.loggedInUserEmail.waitForDisplayed()
+    return this.loggedInUserEmail.getText()
+  }
+
+  getDisplayedErrorMessage() {
+    return this.errorMessage
+  }
+
+  getDisplayedURLErrorMessage() {
+    return this.errorMessageForURL
+  }
+
+  getDisplayedErrorSummaryMessage() {
+    return this.errorSummaryMessage
+  }
+
+  getErrorHeader() {
+    return this.errorHeader
+  }
+
+  getCharacterCountMessage() {
+    return this.characterCountMessage
+  }
+
+  getPlainText() {
+    return this.textArea
+  }
+
+  getUrlTextArea() {
+    return this.urlTextArea
+  }
+
+  get reviewLimitSelect() {
+    return $('#reviewLimit')
+  }
+
+  get paginationInfo() {
+    return $('#paginationInfo')
+  }
+
+  get nextPageButton() {
+    return $('li.govuk-pagination__item--next a')
+  }
+
+  get reviewRows() {
+    return $$('table tbody tr')
+  }
+
   open() {
     return super.open('/')
   }
@@ -99,9 +165,7 @@ class HomePage extends Page {
   }
 
   async providePlainText(fileName) {
-    const filePath = path.join(__dirname, '..', 'testdata', `${fileName}.txt`)
-
-    const content = fs.readFileSync(filePath, 'utf-8')
+    const content = await CommonUtils.getTextFromFile(fileName)
 
     await this.textArea.click()
     await browser.keys(['Control', 'a'])
@@ -126,7 +190,20 @@ class HomePage extends Page {
     await this.textArea.click()
     await browser.keys(['Control', 'a'])
     await browser.keys('Backspace')
-    await this.textArea.setValue(text)
+    await browser.execute(
+      function (selector, value) {
+        const el = document.querySelector(selector)
+        if (!el) return
+
+        el.focus()
+        el.value = value
+        el.dispatchEvent(new Event('input', { bubbles: true }))
+        el.dispatchEvent(new Event('change', { bubbles: true }))
+        el.blur()
+      },
+      this.textAreaSelector,
+      text
+    )
   }
 
   async provideURL(url) {
@@ -147,34 +224,6 @@ class HomePage extends Page {
 
   async clickHome() {
     await this.homeLink.click()
-  }
-
-  getDisplayedErrorMessage() {
-    return this.errorMessage
-  }
-
-  getDisplayedURLErrorMessage() {
-    return this.errorMessageForURL
-  }
-
-  getDisplayedErrorSummaryMessage() {
-    return this.errorSummaryMessage
-  }
-
-  getErrorHeader() {
-    return this.errorHeader
-  }
-
-  getCharacterCountMessage() {
-    return this.characterCountMessage
-  }
-
-  getPlainText() {
-    return this.textArea
-  }
-
-  getUrlTextArea() {
-    return this.urlTextArea
   }
 
   async getRowByReviewName(reviewTitlePrefix) {
@@ -207,7 +256,7 @@ class HomePage extends Page {
     return row.$('aria/Delete')
   }
 
-  async waitForStatusCompleted(reviewName, timeoutMs = 600000) {
+  async waitForStatusCompleted(reviewName, timeoutMs = 120000) {
     let foundRow
 
     await browser.waitUntil(
@@ -217,14 +266,20 @@ class HomePage extends Page {
         const row = await this.getRowByReviewName(reviewName)
 
         if (!row) {
-          return false // keep waiting
+          return false // row not visible yet
         }
 
         const status = (await this.getStatusForRow(row).getText()).trim()
 
+        // SUCCESS CASE
         if (status === 'Completed') {
           foundRow = row
           return true
+        }
+
+        // FAILURE CASE — stop immediately
+        if (status === 'Failed') {
+          throw new Error(`Review "${reviewName}" failed.`)
         }
 
         return false
@@ -232,10 +287,102 @@ class HomePage extends Page {
       {
         timeout: timeoutMs,
         interval: 2000, // replaces browser.pause(2000)
-        timeoutMsg: `Status did not reach Completed for "${reviewName}"`
+        timeoutMsg: `Timeout after ${timeoutMs}ms waiting for status "Completed" for "${reviewName}".`
       }
     )
+
     return foundRow
+  }
+
+  async selectReviewLimit(limit) {
+    await this.reviewLimitSelect.waitForDisplayed({ timeout: 60000 })
+    await this.reviewLimitSelect.selectByAttribute('value', String(limit))
+  }
+
+  async getPaginationCounts() {
+    await this.paginationInfo.waitForDisplayed()
+
+    const text = await this.paginationInfo.getText()
+    const match = text.match(/Showing\s+\d+\s+to\s+(\d+)\s+of\s+(\d+)/i)
+
+    if (!match) {
+      throw new Error(`Unexpected pagination text: ${text}`)
+    }
+
+    return {
+      shown: Number(match[1]),
+      total: Number(match[2])
+    }
+  }
+
+  async waitForPaginationToChange(previousShown) {
+    await browser.waitUntil(
+      async () => {
+        const { shown } = await this.getPaginationCounts()
+        return shown > previousShown
+      },
+      {
+        timeout: 30000,
+        timeoutMsg: 'Pagination did not advance'
+      }
+    )
+  }
+
+  async applyFilterAndValidatePagination(limit) {
+    //  Apply filter
+    await this.selectReviewLimit(limit)
+
+    // Wait for pagination info to appear
+    await this.paginationInfo.waitForDisplayed({ timeout: 60000 })
+
+    let pageNumber = 1
+
+    // Read initial pagination state
+    let { shown, total } = await this.getPaginationCounts()
+
+    // Edge case: no reviews
+    if (total === 0) {
+      return
+    }
+
+    const expectedPageSize = 25
+
+    // Pagination loop
+    while (true) {
+      // Rows on current page
+      const rows = await this.reviewRows
+      const rowCount = rows.length
+
+      // Calculate expected rows for this page
+      const remainingRecords = total - (shown - rowCount)
+      const expectedRowsOnPage =
+        remainingRecords >= expectedPageSize
+          ? expectedPageSize
+          : remainingRecords
+
+      // Assertion
+      expect(rowCount).toBe(
+        expectedRowsOnPage,
+        `Page ${pageNumber} expected ${expectedRowsOnPage} rows but found ${rowCount}`
+      )
+
+      // Stop condition
+      if (shown >= total) {
+        break
+      }
+
+      // Go to next page
+      await this.nextPageButton.waitForClickable()
+      await this.nextPageButton.click()
+
+      // Wait until pagination advances
+      await this.waitForPaginationToChange(shown)
+
+      // Update pagination state
+      ;({ shown, total } = await this.getPaginationCounts())
+
+      pageNumber++
+    }
   }
 }
 
