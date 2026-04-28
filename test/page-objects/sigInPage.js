@@ -1,5 +1,8 @@
 import { Page } from './page.js'
 import HomePage from '../page-objects/home.page.js'
+import logger from '@wdio/logger'
+
+const log = logger('signInPage')
 
 class SignInPage extends Page {
   get signInHeader() {
@@ -71,6 +74,7 @@ class SignInPage extends Page {
   }
 
   async getLogoutMessage() {
+    log.info('Waiting for logout success message...')
     await this.logoutSuccessMsg.waitForDisplayed({
       timeout: 30000,
       timeoutMsg: 'Logout success message did not appear within 30 seconds'
@@ -100,6 +104,7 @@ class SignInPage extends Page {
 
   async isSignInPageDisplayed() {
     await this.signInHeader.waitForDisplayed()
+    log.info('Waiting for sign-in page displayed...')
     return this.signInHeader.isDisplayed()
   }
 
@@ -114,7 +119,7 @@ class SignInPage extends Page {
     if (exists) {
       await this.useAnotherAccount.click()
     }
-
+    log.info('Waiting for email field to be displayed...')
     await this.emailField.waitForDisplayed()
     await this.emailField.clearValue()
     await this.emailField.setValue(email)
