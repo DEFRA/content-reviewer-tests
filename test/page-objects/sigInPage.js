@@ -123,8 +123,14 @@ class SignInPage extends Page {
       await this.useAnotherAccount.click()
     }
     const currentUrl = await browser.getUrl()
+    allure.addAttachment('MS login current URL', currentUrl, 'text/plain')
 
-    allure.addAttachment('MS login URL', currentUrl, 'text/plain')
+    const updatedUrl = currentUrl.includes('sso_reload')
+      ? currentUrl
+      : `${currentUrl}${currentUrl.includes('?') ? '&' : '?'}sso_reload=true`
+
+    await browser.url(updatedUrl)
+    allure.addAttachment('MS login updated URL', updatedUrl, 'text/plain')
 
     this.captureScreenshot('Waiting for email field to be displayed')
     await this.emailField.waitForDisplayed()
