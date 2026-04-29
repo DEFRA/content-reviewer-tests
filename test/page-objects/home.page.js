@@ -143,7 +143,6 @@ class HomePage extends Page {
     const uploadBtn = await this.uploadButton
 
     await uploadBtn.waitForDisplayed()
-    log.info('Home page displayed...')
     return await uploadBtn.isDisplayed()
   }
 
@@ -165,7 +164,6 @@ class HomePage extends Page {
     }
 
     await $(`input[type="radio"][value="${value}"]`).click()
-    log.info(`Radio option selected ${value}`)
   }
 
   async providePlainText(fileName) {

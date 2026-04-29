@@ -1,10 +1,15 @@
 import { Page } from './page.js'
 import HomePage from '../page-objects/home.page.js'
 import logger from '@wdio/logger'
-
+import allure from '@wdio/allure-reporter'
 const log = logger('signInPage')
 
 class SignInPage extends Page {
+  async captureScreenshot(label) {
+    const screenshot = await browser.takeScreenshot()
+    allure.addAttachment(label, Buffer.from(screenshot, 'base64'), 'image/png')
+  }
+
   get signInHeader() {
     return $('h1.govuk-heading-l')
   }
@@ -74,7 +79,6 @@ class SignInPage extends Page {
   }
 
   async getLogoutMessage() {
-    log.info('Waiting for logout success message...')
     await this.logoutSuccessMsg.waitForDisplayed({
       timeout: 30000,
       timeoutMsg: 'Logout success message did not appear within 30 seconds'
@@ -104,7 +108,7 @@ class SignInPage extends Page {
 
   async isSignInPageDisplayed() {
     await this.signInHeader.waitForDisplayed()
-    log.info('Waiting for sign-in page displayed...')
+    this.captureScreenshot('Waiting for sign-in page displayed')
     return this.signInHeader.isDisplayed()
   }
 
@@ -119,7 +123,7 @@ class SignInPage extends Page {
     if (exists) {
       await this.useAnotherAccount.click()
     }
-    log.info('Waiting for email field to be displayed...')
+    this.captureScreenshot('Waiting for email field to be displayed')
     await this.emailField.waitForDisplayed()
     await this.emailField.clearValue()
     await this.emailField.setValue(email)
@@ -187,7 +191,7 @@ class SignInPage extends Page {
 
   async clickSignOutUserByEmail() {
     const userTile = await this.getUserTileByEmailInsensitive(
-      process.env.TEST_USERNAME
+      process.env.TESTUSER_USERNAME
     )
     await userTile.waitForClickable()
     await userTile.click()
