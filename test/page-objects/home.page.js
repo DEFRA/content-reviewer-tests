@@ -1,8 +1,6 @@
 import { Page } from '../page-objects/page.js'
 import CommonUtils from '../helpers/commonUtils.js'
-import logger from '@wdio/logger'
 
-const log = logger('homePage')
 class HomePage extends Page {
   get uploadButton() {
     return $('#uploadButton')
@@ -143,7 +141,6 @@ class HomePage extends Page {
     const uploadBtn = await this.uploadButton
 
     await uploadBtn.waitForDisplayed()
-    log.info('Home page displayed...')
     return await uploadBtn.isDisplayed()
   }
 
@@ -165,7 +162,6 @@ class HomePage extends Page {
     }
 
     await $(`input[type="radio"][value="${value}"]`).click()
-    log.info(`Radio option selected ${value}`)
   }
 
   async providePlainText(fileName) {

@@ -257,7 +257,7 @@ describe('Text Upload - E2E flow', () => {
 })
 
 describe('Sign In & Sign out', () => {
-  it('Sign In & Sign out successfully', async () => {
+  it('Sign In successfully', async () => {
     await HomePage.navigate()
     await expect(await HomePage.isLoaded()).toBe(true)
 
@@ -269,8 +269,8 @@ describe('Sign In & Sign out', () => {
 
     await SignInPage.signIn()
     await SignInPage.validateSignOutLinkVisible()
-
-    // Sign out
+  })
+  it('Sign out successfully', async () => {
     SignInPage.clickSignOut()
     SignInPage.clickSignOutUserByEmail()
     expect(await SignInPage.getLogoutMessage()).toContain(
@@ -285,7 +285,7 @@ describe('Sign In & Sign out', () => {
 })
 
 describe('Pagination', () => {
-  it('User select number of reviews to display', async () => {
+  it('User select number of reviews to display in Home page', async () => {
     await HomePage.navigate()
     await expect(await HomePage.isLoaded()).toBe(true)
 
