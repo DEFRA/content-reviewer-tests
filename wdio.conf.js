@@ -45,6 +45,8 @@ export const config = {
           '--window-size=1920,1080',
           '--enable-features=NetworkService,NetworkServiceInProcess',
           '--password-store=basic',
+          '--disable-site-isolation-trials',
+          '--disable-features=BlockInsecurePrivateNetworkRequests,IsolateOrigins,site-per-process',
           '--use-mock-keychain',
           '--dns-prefetch-disable',
           '--disable-background-networking',
