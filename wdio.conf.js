@@ -42,6 +42,7 @@ export const config = {
           '--disable-infobars',
           '--disable-gpu',
           '--window-size=1920,1080',
+          '--proxy-server=http://localhost:3128',
           '--enable-features=NetworkService,NetworkServiceInProcess',
           '--password-store=basic',
           '--disable-site-isolation-trials',
