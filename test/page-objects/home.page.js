@@ -1,8 +1,6 @@
 import { Page } from '../page-objects/page.js'
 import CommonUtils from '../helpers/commonUtils.js'
-import logger from '@wdio/logger'
 
-const log = logger('homePage')
 class HomePage extends Page {
   get uploadButton() {
     return $('#uploadButton')

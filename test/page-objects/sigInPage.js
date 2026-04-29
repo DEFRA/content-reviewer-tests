@@ -1,8 +1,6 @@
 import { Page } from './page.js'
 import HomePage from '../page-objects/home.page.js'
-import logger from '@wdio/logger'
 import allure from '@wdio/allure-reporter'
-const log = logger('signInPage')
 
 class SignInPage extends Page {
   async captureScreenshot(label) {
