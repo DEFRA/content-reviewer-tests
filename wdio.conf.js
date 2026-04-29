@@ -40,7 +40,6 @@ export const config = {
         args: [
           '--no-sandbox',
           '--disable-infobars',
-          '--headless=new',
           '--disable-gpu',
           '--window-size=1920,1080',
           '--enable-features=NetworkService,NetworkServiceInProcess',
