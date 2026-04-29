@@ -1,6 +1,7 @@
 import { Page } from './page.js'
 import HomePage from '../page-objects/home.page.js'
 import allure from '@wdio/allure-reporter'
+import { browser } from '@wdio/globals'
 
 class SignInPage extends Page {
   async captureScreenshot(label) {
@@ -121,6 +122,10 @@ class SignInPage extends Page {
     if (exists) {
       await this.useAnotherAccount.click()
     }
+    const currentUrl = await browser.getUrl()
+
+    allure.addAttachment('MS login URL', currentUrl, 'text/plain')
+
     this.captureScreenshot('Waiting for email field to be displayed')
     await this.emailField.waitForDisplayed()
     await this.emailField.clearValue()
