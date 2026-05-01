@@ -1,5 +1,4 @@
 import { Page } from './page.js'
-import HomePage from '../page-objects/home.page.js'
 import allure from '@wdio/allure-reporter'
 import { browser } from '@wdio/globals'
 
@@ -62,7 +61,7 @@ class SignInPage extends Page {
   }
 
   get signInAgainBtn() {
-    return $('a.govuk-button[href="/auth/login-page"]')
+    return $('a.govuk-button[href="/auth/login"]')
   }
 
   get signOutLink() {
@@ -85,11 +84,6 @@ class SignInPage extends Page {
     return await this.logoutSuccessMsg.getText()
   }
 
-  async clickReturnToHomepage() {
-    await this.returnHomeLink.waitForClickable()
-    await this.returnHomeLink.click()
-  }
-
   async clickSignInAgain() {
     await this.signInAgainBtn.waitForClickable()
     await this.signInAgainBtn.click()
@@ -98,11 +92,6 @@ class SignInPage extends Page {
   async clickStartSignIn() {
     await this.startSignInBtn.waitForClickable()
     await this.startSignInBtn.click()
-  }
-
-  async clickContinueWithoutSignIn() {
-    await this.continueWithoutSignInLink.waitForClickable()
-    await this.continueWithoutSignInLink.click()
   }
 
   async isSignInPageDisplayed() {
@@ -124,13 +113,6 @@ class SignInPage extends Page {
     }
     const currentUrl = await browser.getUrl()
     allure.addAttachment('MS login current URL', currentUrl, 'text/plain')
-
-    const updatedUrl = currentUrl.includes('sso_reload')
-      ? currentUrl
-      : `${currentUrl}${currentUrl.includes('?') ? '&' : '?'}sso_reload=true`
-
-    await browser.url(updatedUrl)
-    allure.addAttachment('MS login updated URL', updatedUrl, 'text/plain')
 
     this.captureScreenshot('Waiting for email field to be displayed')
     await this.emailField.waitForDisplayed()
@@ -214,18 +196,25 @@ class SignInPage extends Page {
         'Credentials are not set. Please configure TEST_USERNAME and TEST_PASSWORD.'
       )
     }
+    if (await this.startSignInBtn.isDisplayed()) {
+      await this.clickStartSignIn()
+      await this.typeEmail(userName)
+      await this.clickNextOrSignInButton()
+      await this.clickSignInOtherWay()
+      await this.clickUseMyPassword()
+      await this.typePassword(password)
+      await this.clickNextOrSignInButton()
+      await this.acceptStaySignedIn()
+      expect(
+        (await this.getLoggedInEmailText()).trim().toLowerCase()
+      ).toContain(userName.trim().toLowerCase())
+    } else {
+      allure.addAttachment('User already logged in', '', 'text/plain')
+    }
+  }
 
-    await HomePage.clickSignIn()
-    this.isSignInPageDisplayed()
-
-    await this.clickStartSignIn()
-    await this.typeEmail(userName)
-    await this.clickNextOrSignInButton()
-    await this.clickSignInOtherWay()
-    await this.clickUseMyPassword()
-    await this.typePassword(password)
-    await this.clickNextOrSignInButton()
-    await this.acceptStaySignedIn()
+  async checkIfUserSignedInAlready(userName) {
+    this.getLoggedInEmailText()
     expect((await this.getLoggedInEmailText()).trim().toLowerCase()).toContain(
       userName.trim().toLowerCase()
     )
