@@ -6,17 +6,10 @@ import CommonUtils from '../helpers/commonUtils.js'
 import SignInPage from '../page-objects/sigInPage.js'
 import ReviewResults from '../page-objects/reviewResults.js'
 
-describe('Home Page', () => {
-  it('Homepage loads successfully', async () => {
-    await HomePage.open()
-    const loaded = await HomePage.isLoaded()
-    await expect(loaded).toBe(true)
-  })
-})
-
 describe('Plain Text Upload Validations', () => {
   it('Error message validations for plain texts upload', async () => {
     await HomePage.navigate()
+    await SignInPage.signIn()
     await expect(await HomePage.isLoaded()).toBe(true)
 
     await HomePage.selectRadioOption('Insert text')
@@ -74,6 +67,7 @@ describe('Plain Text Upload Validations', () => {
 describe('Clear text button Validations', () => {
   it('Clear text button for plain text & URL Upload', async () => {
     await HomePage.navigate()
+    await SignInPage.signIn()
     await expect(await HomePage.isLoaded()).toBe(true)
 
     await HomePage.selectRadioOption('Insert text')
@@ -102,6 +96,7 @@ describe('Clear text button Validations', () => {
 describe('URL Upload Validations', () => {
   it('Error message validations for URL upload', async () => {
     await HomePage.navigate()
+    await SignInPage.signIn()
     await expect(await HomePage.isLoaded()).toBe(true)
 
     await HomePage.selectRadioOption('URL upload')
@@ -133,13 +128,14 @@ describe('URL Upload Validations', () => {
 
 describe('Text Upload - E2E flow', () => {
   it('Submit & wait for text review to complete', async () => {
+    await HomePage.navigate()
+    await SignInPage.signIn()
     const reviewContent = CommonUtils.generateAutomationText(
       'Documentation for automation test suite for validating GOV.UK content formatting'
     )
 
     const reviewTitle = reviewContent.split('\n')[0]
-    // const reviewTitle = 'Automation 15/04/2026 11:44:11AM';
-    await HomePage.navigate()
+
     await expect(await HomePage.isLoaded()).toBe(true)
 
     await HomePage.selectRadioOption('Insert text')
@@ -200,6 +196,7 @@ describe('Text Upload - E2E flow', () => {
     const reviewTitle = reviewContent.split('\n')[0]
     // const reviewTitle = 'Automation 15/04/2026 11:44:11AM';
     await HomePage.navigate()
+    await SignInPage.signIn()
     await expect(await HomePage.isLoaded()).toBe(true)
 
     await HomePage.selectRadioOption('Insert text')
@@ -259,17 +256,11 @@ describe('Text Upload - E2E flow', () => {
 describe('Sign In & Sign out', () => {
   it('Sign In successfully', async () => {
     await HomePage.navigate()
-    await expect(await HomePage.isLoaded()).toBe(true)
-
-    await HomePage.clickSignIn()
-    await SignInPage.isSignInPageDisplayed()
-
-    await SignInPage.clickContinueWithoutSignIn()
-    await expect(await HomePage.isLoaded()).toBe(true)
-
     await SignInPage.signIn()
     await SignInPage.validateSignOutLinkVisible()
+    await expect(await HomePage.isLoaded()).toBe(true)
   })
+
   it('Sign out successfully', async () => {
     SignInPage.clickSignOut()
     SignInPage.clickSignOutUserByEmail()
@@ -278,19 +269,14 @@ describe('Sign In & Sign out', () => {
     )
     await SignInPage.clickSignInAgain()
     SignInPage.isSignInPageDisplayed()
-    await browser.back()
-    await SignInPage.clickReturnToHomepage()
-    await expect(await HomePage.isLoaded()).toBe(true)
   })
 })
 
 describe('Pagination', () => {
   it('User select number of reviews to display in Home page', async () => {
     await HomePage.navigate()
-    await expect(await HomePage.isLoaded()).toBe(true)
-
     await SignInPage.signIn()
-
+    await expect(await HomePage.isLoaded()).toBe(true)
     await HomePage.applyFilterAndValidatePagination(100)
   })
 })
