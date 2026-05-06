@@ -36,6 +36,11 @@ export const config = {
         }
       }),
       browserName: 'chrome',
+      proxy: {
+        proxyType: 'manual',
+        httpProxy: 'localhost:3128',
+        sslProxy: 'localhost:3128'
+      },
       'goog:chromeOptions': {
         args: [
           '--no-sandbox',
