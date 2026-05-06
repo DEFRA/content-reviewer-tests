@@ -1,4 +1,15 @@
 import fs from 'node:fs'
+import { ProxyAgent, setGlobalDispatcher } from 'undici'
+import { bootstrap } from 'global-agent'
+
+const dispatcher = new ProxyAgent({
+  uri: 'http://localhost:3128'
+})
+
+setGlobalDispatcher(dispatcher)
+bootstrap()
+
+global.GLOBAL_AGENT.HTTP_PROXY = 'http://localhost:3128'
 
 const oneMinute = 60 * 1000
 
