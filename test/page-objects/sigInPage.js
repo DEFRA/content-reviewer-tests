@@ -114,7 +114,18 @@ class SignInPage extends Page {
     }
     const currentUrl = await browser.getUrl()
     allure.addAttachment('MS login current URL', currentUrl, 'text/plain')
-
+    const source = await browser.getPageSource()
+    allure.addAttachment('Page Source', source, 'text/plain')
+    const logs = await browser.getLogs('browser')
+    allure.addAttachment(
+      'Browser Logs',
+      JSON.stringify(logs, null, 2),
+      'text/plain'
+    )
+    allure.addAttachment(
+      JSON.stringify(browser.capabilities, null, 2),
+      'application/json'
+    )
     this.captureScreenshot('Waiting for email field to be displayed')
     await this.emailField.waitForDisplayed()
     await this.emailField.clearValue()
