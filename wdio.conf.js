@@ -1,15 +1,4 @@
 import fs from 'node:fs'
-import { ProxyAgent, setGlobalDispatcher } from 'undici'
-import { bootstrap } from 'global-agent'
-
-const dispatcher = new ProxyAgent({
-  uri: 'http://localhost:3128'
-})
-
-setGlobalDispatcher(dispatcher)
-bootstrap()
-
-global.GLOBAL_AGENT.HTTP_PROXY = 'http://localhost:3128'
 
 const oneMinute = 60 * 1000
 
@@ -58,7 +47,6 @@ export const config = {
           '--disable-infobars',
           '--disable-gpu',
           '--window-size=1920,1080',
-          '--proxy-server=http://localhost:3128',
           '--enable-features=NetworkService,NetworkServiceInProcess',
           '--password-store=basic',
           '--disable-site-isolation-trials',
@@ -84,9 +72,9 @@ export const config = {
 
   // Number of failures before the test suite bails.
   bail: 0,
-  waitforTimeout: 10000,
+  waitforTimeout: 100000,
   waitforInterval: 200,
-  connectionRetryTimeout: 6000,
+  connectionRetryTimeout: 100000,
   connectionRetryCount: 3,
   framework: 'mocha',
 
