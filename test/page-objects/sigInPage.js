@@ -97,7 +97,6 @@ class SignInPage extends Page {
 
   async isSignInPageDisplayed() {
     await this.signInHeader.waitForDisplayed()
-    this.captureScreenshot('Waiting for sign-in page displayed')
     return this.signInHeader.isDisplayed()
   }
 
@@ -112,10 +111,6 @@ class SignInPage extends Page {
     if (exists) {
       await this.useAnotherAccount.click()
     }
-    const currentUrl = await browser.getUrl()
-    allure.addAttachment('MS login current URL', currentUrl, 'text/plain')
-    const source = await browser.getPageSource()
-    allure.addAttachment('Page Source', source, 'text/plain')
     const logs = await browser.getLogs('browser')
     allure.addAttachment(
       'Browser Logs',
