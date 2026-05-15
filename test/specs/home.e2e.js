@@ -7,7 +7,7 @@ import SignInPage from '../page-objects/sigInPage.js'
 import ReviewResults from '../page-objects/reviewResults.js'
 
 describe('Plain Text Upload Validations', () => {
-  it('Error message validations for plain texts upload', async () => {
+  it('Error message validations-plain texts-No text content provided', async () => {
     await HomePage.navigate()
     await SignInPage.signIn()
     await expect(await HomePage.isLoaded()).toBe(true)
@@ -30,7 +30,9 @@ describe('Plain Text Upload Validations', () => {
     await expect(HomePage.getDisplayedErrorSummaryMessage()).toHaveText(
       'Enter text content for review'
     )
+  })
 
+  it('Error message validations-plain texts-Less than 10 chars', async () => {
     // Less than 10 chars
     await HomePage.providePlainText('Lessthan10Char')
     await HomePage.clickReviewContent()
@@ -46,7 +48,9 @@ describe('Plain Text Upload Validations', () => {
     await expect(HomePage.getCharacterCountMessage()).toHaveText(
       'You have 99994 characters remaining'
     )
+  })
 
+  it('Error message validations-plain texts-More than 100k characters', async () => {
     await HomePage.providePlainText('MoreThan100kChars')
     await HomePage.clickReviewContent()
 
@@ -94,7 +98,7 @@ describe('Clear text button Validations', () => {
 })
 
 describe('URL Upload Validations', () => {
-  it('Error message validations for URL upload', async () => {
+  it('Error message validations-URL upload-No URL provided', async () => {
     await HomePage.navigate()
     await SignInPage.signIn()
     await expect(await HomePage.isLoaded()).toBe(true)
@@ -112,7 +116,9 @@ describe('URL Upload Validations', () => {
     await expect(HomePage.getDisplayedErrorSummaryMessage()).toHaveText(
       'Enter URL for content review'
     )
+  })
 
+  it('Error message validations-URL upload-Not a GOV.UK URL', async () => {
     await HomePage.provideURL('google.co.uk')
     await HomePage.clickReviewContent()
 
@@ -122,6 +128,20 @@ describe('URL Upload Validations', () => {
 
     await expect(HomePage.getDisplayedErrorSummaryMessage()).toHaveText(
       'Enter a valid GOV.UK URL'
+    )
+  })
+  it('Error message validations-URL upload-More than 100k character URL', async () => {
+    await HomePage.provideURL(
+      'https://www.gov.uk/government/publications/guide-to-making-legislation/guide-to-making-legislation-html--2'
+    )
+    await HomePage.clickReviewContent()
+
+    await expect(HomePage.getDisplayedURLErrorMessage()).toHaveText(
+      'Extracted text is too long. Maximum 100000 characters. The webpage has 781684 characters'
+    )
+
+    await expect(HomePage.getDisplayedErrorSummaryMessage()).toHaveText(
+      'Extracted text is too long. Maximum 100000 characters. The webpage has 781684 characters'
     )
   })
 })
@@ -227,6 +247,65 @@ describe('Text Upload - E2E flow', () => {
     await ReviewResults.verifyCategoryScore('Content Completeness', '4/5')
 
     await browser.back()
+
+    await HomePage.getDeleteLink(row).click()
+
+    await DeletePage.expectConfirmationHeadingVisible()
+
+    await DeletePage.clickConfirmDelete()
+
+    await HomePage.clickHome()
+
+    let confirmRowDeleted
+
+    await browser.waitUntil(
+      async () => {
+        confirmRowDeleted = await HomePage.getRowByReviewName(reviewTitle)
+        return confirmRowDeleted === null
+      },
+      {
+        timeout: 10000,
+        timeoutMsg: `Row "${reviewTitle}" was still present after delete`
+      }
+    )
+
+    expect(confirmRowDeleted).toBeNull()
+  })
+})
+
+describe('URL Upload - E2E flow', () => {
+  it('Submit & wait for URL review to complete', async () => {
+    await HomePage.navigate()
+    await SignInPage.signIn()
+
+    await expect(await HomePage.isLoaded()).toBe(true)
+
+    await HomePage.selectRadioOption('URL upload')
+    await HomePage.provideURL(
+      'https://www.gov.uk/guidance/flood-risk-assessment-standing-advice'
+    )
+    await HomePage.clickReviewContent()
+    const reviewTitle = 'Preparing a flood risk assessment: standing advice'
+    const row = await HomePage.waitForStatusCompleted(reviewTitle)
+
+    await expect(HomePage.getStatusForRow(row)).toHaveText('Completed')
+
+    const dateTimeText = await HomePage.getDateTimeForRow(row).getText()
+
+    expect(dateTimeText).toMatch(/^\d{2}\/\d{2}\/\d{4},\s\d{2}:\d{2}$/)
+
+    await HomePage.getViewResultsLink(row).click()
+
+    await expect(browser).toHaveUrl(expect.stringContaining('/review/results/'))
+
+    await browser.back()
+
+    await HomePage.getDeleteLink(row).click()
+    await DeletePage.expectConfirmationHeadingVisible()
+
+    await DeletePage.cancelAndGoBack()
+
+    await expect(row).toBeExisting()
 
     await HomePage.getDeleteLink(row).click()
 
