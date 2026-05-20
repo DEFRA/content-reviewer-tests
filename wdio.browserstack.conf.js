@@ -2,18 +2,28 @@ import fs from 'node:fs'
 import { ProxyAgent, setGlobalDispatcher } from 'undici'
 import { bootstrap } from 'global-agent'
 
+if (!process.env.HTTP_PROXY) {
+  const dispatcher = new ProxyAgent(process.env.HTTP_PROXY)
+
+  setGlobalDispatcher(dispatcher)
+  global.GLOBAL_AGENT.HTTP_PROXY = process.env.HTTP_PROXY
+
+  bootstrap()
+}
+
+const debug = process.env.DEBUG
 /**
  * Enable webdriver.io to use the outbound proxy.
  * This is required for the test suite to be able to talk to BrowserStack.
  */
-if (process.env.HTTP_PROXY) {
-  const dispatcher = new ProxyAgent({
-    uri: process.env.HTTP_PROXY
-  })
-  setGlobalDispatcher(dispatcher)
-  bootstrap()
-  global.GLOBAL_AGENT.HTTP_PROXY = process.env.HTTP_PROXY
-}
+// if (process.env.HTTP_PROXY) {
+//   const dispatcher = new ProxyAgent({
+//     uri: process.env.HTTP_PROXY
+//   })
+//   setGlobalDispatcher(dispatcher)
+//   bootstrap()
+//   global.GLOBAL_AGENT.HTTP_PROXY = process.env.HTTP_PROXY
+// }
 
 const oneMinute = 60 * 1000
 
@@ -29,7 +39,7 @@ export const config = {
   // with `/`, the base url gets prepended, not including the path portion of your baseUrl.
   // If your `url` parameter starts without a scheme or `/` (like `some/path`), the base url
   // gets prepended directly.
-  baseUrl: `https://content-reviewer-tests.${process.env.ENVIRONMENT}.cdp-int.defra.cloud`,
+  baseUrl: `https://content-reviewer-frontend.dev.cdp-int.defra.cloud`,
 
   // You will need to provide your own BrowserStack credentials.
   // These should be added as secrets to the test suite.
@@ -51,10 +61,13 @@ export const config = {
   capabilities: [
     {
       browserName: 'Chrome', // Set as required
+      browserVersion: 'latest',
       'bstack:options': {
-        browserVersion: 'latest',
         os: 'Windows',
-        osVersion: '11'
+        osVersion: '11',
+        local: true,
+        debug: true,
+        networkLogs: true
       }
     }
   ],
@@ -63,19 +76,14 @@ export const config = {
     [
       'browserstack',
       {
+        forceLocal: true,
+        browserstackLocal: true,
         testObservability: true, // Disable if you do not want to use the browserstack test observer functionality
         testObservabilityOptions: {
           user: process.env.BROWSERSTACK_USER,
           key: process.env.BROWSERSTACK_KEY,
-          projectName: 'cdp-node-env-test-suite', // should match project in browserstack
+          projectName: 'content-reviewer-tests', // should match project in browserstack
           buildName: `content-reviewer-tests-${process.env.ENVIRONMENT}`
-        },
-        acceptInsecureCerts: true,
-        forceLocal: false,
-        browserstackLocal: true,
-        opts: {
-          proxyHost: 'localhost',
-          proxyPort: 3128
         }
       }
     ]
@@ -83,7 +91,10 @@ export const config = {
 
   execArgv: ['--loader', 'esm-module-alias/loader'],
 
-  logLevel: 'info',
+  logLevel: debug ? 'debug' : 'info',
+  logLevels: {
+    webdriver: 'error'
+  },
 
   // Number of failures before the test suite bails.
   bail: 0,
