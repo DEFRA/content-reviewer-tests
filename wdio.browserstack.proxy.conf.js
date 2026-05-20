@@ -7,7 +7,7 @@ const dispatcher = new ProxyAgent({
 })
 setGlobalDispatcher(dispatcher)
 bootstrap()
-global.GLOBAL_AGENT.HTTP_PROXY = process.env.HTTP_PROXY
+global.GLOBAL_AGENT.HTTP_PROXY = process.env.CDP_HTTP_PROXY
 
 browserstackConfig.services[0][1].opts = {
   binarypath: '/root/.browserstack/BrowserStackLocal',
