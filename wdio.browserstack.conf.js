@@ -1,68 +1,31 @@
 import fs from 'node:fs'
-import { ProxyAgent, setGlobalDispatcher } from 'undici'
-import { bootstrap } from 'global-agent'
-
-if (!process.env.HTTP_PROXY) {
-  const dispatcher = new ProxyAgent(process.env.HTTP_PROXY)
-
-  setGlobalDispatcher(dispatcher)
-  global.GLOBAL_AGENT.HTTP_PROXY = process.env.HTTP_PROXY
-
-  bootstrap()
-}
 
 const debug = process.env.DEBUG
-/**
- * Enable webdriver.io to use the outbound proxy.
- * This is required for the test suite to be able to talk to BrowserStack.
- */
-// if (process.env.HTTP_PROXY) {
-//   const dispatcher = new ProxyAgent({
-//     uri: process.env.HTTP_PROXY
-//   })
-//   setGlobalDispatcher(dispatcher)
-//   bootstrap()
-//   global.GLOBAL_AGENT.HTTP_PROXY = process.env.HTTP_PROXY
-// }
 
 const oneMinute = 60 * 1000
 
 export const config = {
-  //
-  // ====================
-  // Runner Configuration
-  // ====================
-  // WebdriverIO supports running e2e tests as well as unit and component tests.
   runner: 'local',
-  //
-  // Set a base URL in order to shorten url command calls. If your `url` parameter starts
-  // with `/`, the base url gets prepended, not including the path portion of your baseUrl.
-  // If your `url` parameter starts without a scheme or `/` (like `some/path`), the base url
-  // gets prepended directly.
   baseUrl: `https://content-reviewer-frontend.dev.cdp-int.defra.cloud`,
 
-  // You will need to provide your own BrowserStack credentials.
-  // These should be added as secrets to the test suite.
   user: process.env.BROWSERSTACK_USERNAME,
   key: process.env.BROWSERSTACK_KEY,
 
-  // Tests to run
   specs: ['./test/specs/**/*.js'],
-  // Tests to exclude
   exclude: [],
   maxInstances: 1,
 
   commonCapabilities: {
     'bstack:options': {
-      buildName: `content-reviewer-tests-${process.env.ENVIRONMENT}` // configure as required
+      buildName: `content-reviewer-tests-${process.env.ENVIRONMENT}`
     }
   },
 
   capabilities: [
     {
-      browserName: 'Chrome', // Set as required
-      browserVersion: 'latest',
+      browserName: 'Chrome',
       'bstack:options': {
+        browserVersion: 'latest',
         os: 'Windows',
         osVersion: '11',
         local: true,
@@ -76,7 +39,7 @@ export const config = {
     [
       'browserstack',
       {
-        forceLocal: true,
+        forceLocal: false,
         browserstackLocal: true,
         testObservability: true, // Disable if you do not want to use the browserstack test observer functionality
         testObservabilityOptions: {
