@@ -1,5 +1,38 @@
 content-reviewer-tests
 
+#### Service Account Configuration
+
+Overview
+This automation framework is configured to run using a service account for authentication and execution. To run tests locally, you must ensure that this service account is properly set up in your environment.
+
+Running Tests Locally
+When executing tests from your local machine (via terminal or VS Code), you are required to provide the service account credentials.
+Option 1: Set Credentials via Terminal Environment Variables
+Before running the tests, set the required environment variables in your terminal session.
+Mac / Linux:
+Shellexport SERVICE_USERNAME=<service-account-username>export SERVICE_PASSWORD=<service-account-password>Show more lines
+Windows (Command Prompt):
+BATset SERVICE_USERNAME=<service-account-username>set SERVICE_PASSWORD=<service-account-password>Show more lines
+Windows (PowerShell):
+PowerShell$env:SERVICE_USERNAME="<service-account-username>"$env:SERVICE_PASSWORD="<service-account-password>"Show more lines
+
+VS Code Debugging
+If you are running tests using the VS Code debugger, ensure that the same environment variables are configured in your launch.json:
+JSON"env": { "SERVICE_USERNAME": "<service-account-username>", "SERVICE_PASSWORD": "<service-account-password>"}Show more lines
+
+Credentials Access
+The service account credentials are not shared publicly for security reasons.
+If you do not have the password or are unsure about the correct credentials:
+
+Please raise a request or send an email to the Service/Support Team.
+Include your project name and request access to the automation service account credentials.
+
+Important Notes
+Do not hardcode credentials in the codebase.
+Do not commit credentials to version control.
+Always use environment variables for secure handling.
+Ensure your session variables are set each time you open a new terminal.
+
 The template to create a service that runs WDIO tests against an environment.
 
 - [Local](#local)
