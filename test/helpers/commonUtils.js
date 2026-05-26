@@ -40,4 +40,11 @@ export default class CommonUtils {
       `)
     }
   }
+
+  static async uploadFile(fileName) {
+    // const filePath = path.join(process.cwd(), 'test/data', fileName);
+    const filePath = path.join(__dirname, '..', 'testdata', fileName)
+    const input = await $('#file-upload')
+    await input.setValue(filePath)
+  }
 }

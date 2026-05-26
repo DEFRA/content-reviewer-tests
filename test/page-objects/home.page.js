@@ -1,4 +1,5 @@
 import { Page } from '../page-objects/page.js'
+import allure from '@wdio/allure-reporter'
 import CommonUtils from '../helpers/commonUtils.js'
 
 class HomePage extends Page {
@@ -12,6 +13,10 @@ class HomePage extends Page {
 
   get errorMessageForURL() {
     return $('#urlErrorMessage')
+  }
+
+  get errorMessageForDocument() {
+    return $('#documentErrorMessage')
   }
 
   get errorSummaryMessage() {
@@ -44,10 +49,6 @@ class HomePage extends Page {
 
   get tableBody() {
     return $('#reviewHistoryBody')
-  }
-
-  get rowElements() {
-    return $$('tr.govuk-table__row')
   }
 
   get homeLink() {
@@ -91,6 +92,10 @@ class HomePage extends Page {
 
   getDisplayedURLErrorMessage() {
     return this.errorMessageForURL
+  }
+
+  getDisplayedDocumentErrorMessage() {
+    return this.errorMessageForDocument
   }
 
   getDisplayedErrorSummaryMessage() {
@@ -152,7 +157,7 @@ class HomePage extends Page {
     const optionMap = {
       'Insert text': 'text',
       'URL upload': 'url',
-      'File upload': 'file'
+      'File upload': 'document'
     }
 
     const value = optionMap[optionName]
@@ -226,22 +231,187 @@ class HomePage extends Page {
     await this.homeLink.click()
   }
 
-  async getRowByReviewName(reviewTitlePrefix) {
+  cleanText(str) {
+    return String(str)
+      .replace(/\.\.\.|…/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+  }
+
+  get rowElements() {
+    return $$('table tbody tr')
+  }
+
+  async getRowByReviewName(reviewTitle) {
+    const expected = this.cleanText(reviewTitle)
+
     const rows = await this.rowElements
 
-    for (const row of rows) {
-      const text = (await row.getText()).trim()
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i]
 
-      if (text.includes(reviewTitlePrefix)) {
+      let rowText = ''
+      try {
+        rowText = await row.getText()
+      } catch (error) {
+        allure.addAttachment(
+          ` Could not read row ${i}: ${error.message}`,
+          '',
+          'text/plain'
+        )
+        continue
+      }
+
+      const cells = await row.$$('td')
+
+      allure.addAttachment(
+        `Row ${i} full text: "${this.cleanText(rowText)}"`,
+        '',
+        'text/plain'
+      )
+
+      if (!cells || cells.length < 2) {
+        continue
+      }
+
+      const uploadedContentRaw = await cells[0].getText()
+      const uploadedContent = this.cleanText(uploadedContentRaw)
+
+      if (uploadedContent === expected) {
         return row
       }
     }
 
+    allure.addAttachment(`No matching row found`, '', 'text/plain')
     return null
   }
 
-  getStatusForRow(row) {
-    return row.$$('td')[1]
+  async getStatusForRow(row) {
+    const cells = await row.$$('td')
+
+    if (!cells || cells.length < 2) {
+      throw new Error(
+        `Invalid row structure. Expected at least 2 cells, found ${cells.length}`
+      )
+    }
+
+    return cells[1]
+  }
+
+  async waitForStatusCompleted(reviewTitle, timeoutMs = 120000) {
+    let foundRow
+    let status
+    let lastStatus = 'NOT_READ_YET'
+
+    allure.addAttachment(
+      `INPUT reviewTitle: "${reviewTitle}"`,
+      '',
+      'text/plain'
+    )
+
+    try {
+      await browser.waitUntil(
+        async () => {
+          const table = await $('table')
+          await table.waitForExist({ timeout: 10000 })
+          const row = await this.getRowByReviewName(reviewTitle)
+
+          if (!row) {
+            await browser.waitUntil(
+              async () => {
+                const currentRows = await $$('table tbody tr')
+                return currentRows.length > 0
+              },
+              {
+                timeout: 10000,
+                timeoutMsg: 'Table rows did not appear after refresh'
+              }
+            )
+
+            return false
+          }
+
+          let statusRaw
+
+          try {
+            const statusElement = await this.getStatusForRow(row)
+            statusRaw = await statusElement.getText()
+            status = this.cleanText(statusRaw)
+            lastStatus = status
+          } catch (error) {
+            allure.addAttachment(
+              `Failed to read status: ${error.message}`,
+              '',
+              'text/plain'
+            )
+            return false
+          }
+
+          if (status === 'Completed') {
+            allure.addAttachment(
+              'Status changed to Completed',
+              '',
+              'text/plain'
+            )
+            foundRow = row
+            return true
+          }
+
+          if (status === 'Failed') {
+            allure.addAttachment(
+              `Review "${reviewTitle}" failed.`,
+              '',
+              'text/plain'
+            )
+            throw new Error(`Review "${reviewTitle}" failed.`)
+          }
+
+          if (status === 'Pending') {
+            allure.addAttachment(
+              `Review "${reviewTitle}" status PENDING.`,
+              '',
+              'text/plain'
+            )
+            return false
+          }
+
+          if (status === 'Processing') {
+            await browser.refresh()
+
+            await browser.waitUntil(
+              async () => {
+                const currentRows = await $$('table tbody tr')
+                return currentRows.length > 0
+              },
+              {
+                timeout: 10000,
+                timeoutMsg: 'Table rows did not appear after processing refresh'
+              }
+            )
+
+            return false
+          }
+
+          return false
+        },
+        {
+          timeout: timeoutMs,
+          interval: 2000
+        }
+      )
+
+      return foundRow
+    } catch (error) {
+      const screenshot = await browser.takeScreenshot()
+      allure.addAttachment(
+        'Time out on status change',
+        Buffer.from(screenshot, 'base64'),
+        'image/png'
+      )
+      throw new Error(
+        `❌ Timeout after ${timeoutMs}ms waiting for "${reviewTitle}" to complete. Last status: "${lastStatus}"`
+      )
+    }
   }
 
   getDateTimeForRow(row) {
@@ -254,44 +424,6 @@ class HomePage extends Page {
 
   getDeleteLink(row) {
     return row.$('aria/Delete')
-  }
-
-  async waitForStatusCompleted(reviewName, timeoutMs = 120000) {
-    let foundRow
-
-    await browser.waitUntil(
-      async () => {
-        await browser.refresh()
-
-        const row = await this.getRowByReviewName(reviewName)
-
-        if (!row) {
-          return false // row not visible yet
-        }
-
-        const status = (await this.getStatusForRow(row).getText()).trim()
-
-        // SUCCESS CASE
-        if (status === 'Completed') {
-          foundRow = row
-          return true
-        }
-
-        // FAILURE CASE — stop immediately
-        if (status === 'Failed') {
-          throw new Error(`Review "${reviewName}" failed.`)
-        }
-
-        return false
-      },
-      {
-        timeout: timeoutMs,
-        interval: 2000, // replaces browser.pause(2000)
-        timeoutMsg: `Timeout after ${timeoutMs}ms waiting for status "Completed" for "${reviewName}".`
-      }
-    )
-
-    return foundRow
   }
 
   async selectReviewLimit(limit) {

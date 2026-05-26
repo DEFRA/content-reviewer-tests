@@ -91,7 +91,6 @@ class SignInPage extends Page {
 
   async clickStartSignIn() {
     await this.startSignInBtn.waitForClickable()
-    this.captureScreenshot('Sign In button click')
     await this.startSignInBtn.click()
   }
 
