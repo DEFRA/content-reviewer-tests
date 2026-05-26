@@ -42,9 +42,19 @@ export default class CommonUtils {
   }
 
   static async uploadFile(fileName) {
-    // const filePath = path.join(process.cwd(), 'test/data', fileName);
-    const filePath = path.join(__dirname, '..', 'testdata', fileName)
+    const filePath = path.resolve(process.cwd(), 'test', 'testdata', fileName)
+
+    console.log('Resolved path:', filePath)
+
+    try {
+      await fs.access(filePath)
+    } catch {
+      throw new Error(`File not found: ${filePath}`)
+    }
+
+    const remoteFilePath = await browser.uploadFile(filePath)
+
     const input = await $('#file-upload')
-    await input.setValue(filePath)
+    await input.setValue(remoteFilePath)
   }
 }
