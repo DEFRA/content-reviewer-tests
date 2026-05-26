@@ -43,9 +43,6 @@ export default class CommonUtils {
 
   static async uploadFile(fileName) {
     const filePath = path.resolve(process.cwd(), 'test', 'testdata', fileName)
-
-    console.log('Resolved path:', filePath)
-
     try {
       await fs.access(filePath)
     } catch {
