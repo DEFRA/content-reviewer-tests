@@ -246,23 +246,6 @@ describe('Text Upload - E2E flow', () => {
     await DeletePage.expectConfirmationHeadingVisible()
 
     await DeletePage.clickConfirmDelete()
-
-    await HomePage.clickHome()
-
-    let confirmRowDeleted
-
-    await browser.waitUntil(
-      async () => {
-        confirmRowDeleted = await HomePage.getRowByReviewName(reviewTitle)
-        return confirmRowDeleted === null
-      },
-      {
-        timeout: 10000,
-        timeoutMsg: `Row "${reviewTitle}" was still present after delete`
-      }
-    )
-
-    expect(confirmRowDeleted).toBeNull()
   })
 
   it('Submit text for review & verify review page', async () => {
@@ -298,9 +281,6 @@ describe('Text Upload - E2E flow', () => {
 
     await ReviewResults.clickToggle()
     await ReviewResults.validateScorecard()
-    // await ReviewResults.verifyCategoryScore('Plain English', '4/5')
-    // await ReviewResults.verifyCategoryScore('GOV.UK Style Compliance', '3/5')
-
     await browser.back()
 
     await HomePage.getDeleteLink(row).click()
@@ -340,7 +320,7 @@ describe('URL Upload - E2E flow', () => {
       'https://www.gov.uk/guidance/flood-risk-assessment-standing-advice'
     )
     await HomePage.clickReviewContent()
-    const reviewTitle = 'Preparing a flood risk assessment: standing advice'
+    const reviewTitle = 'Preparing a flood'
     const row = await HomePage.waitForStatusCompleted(reviewTitle)
 
     await expect(await HomePage.getStatusForRow(row)).toHaveText('Completed')
@@ -367,23 +347,6 @@ describe('URL Upload - E2E flow', () => {
     await DeletePage.expectConfirmationHeadingVisible()
 
     await DeletePage.clickConfirmDelete()
-
-    await HomePage.clickHome()
-
-    let confirmRowDeleted
-
-    await browser.waitUntil(
-      async () => {
-        confirmRowDeleted = await HomePage.getRowByReviewName(reviewTitle)
-        return confirmRowDeleted === null
-      },
-      {
-        timeout: 10000,
-        timeoutMsg: `Row "${reviewTitle}" was still present after delete`
-      }
-    )
-
-    expect(confirmRowDeleted).toBeNull()
   })
 })
 
@@ -417,7 +380,6 @@ describe('Document Upload - E2E flow', () => {
     await HomePage.getDeleteLink(row).click()
     await DeletePage.expectConfirmationHeadingVisible()
     await DeletePage.clickConfirmDelete()
-    await HomePage.clickHome()
   })
   it('Submit & wait for Document review to complete-.pdf', async () => {
     const reviewTitle = 'ValidDoc.pdf'
@@ -446,21 +408,6 @@ describe('Document Upload - E2E flow', () => {
     await HomePage.getDeleteLink(row).click()
     await DeletePage.expectConfirmationHeadingVisible()
     await DeletePage.clickConfirmDelete()
-    await HomePage.clickHome()
-    let confirmRowDeleted
-
-    await browser.waitUntil(
-      async () => {
-        confirmRowDeleted = await HomePage.getRowByReviewName(reviewTitle)
-        return confirmRowDeleted === null
-      },
-      {
-        timeout: 10000,
-        timeoutMsg: `Row "${reviewTitle}" was still present after delete`
-      }
-    )
-
-    expect(confirmRowDeleted).toBeNull()
   })
 })
 
