@@ -55,11 +55,11 @@ describe('Plain Text Upload Validations', () => {
     await HomePage.clickReviewContent()
 
     await expect(HomePage.getDisplayedErrorMessage()).toHaveText(
-      'Text content too long. Maximum 100000 characters. Your content has 100140 characters.'
+      'Text content too long. The maximum is 100,000 characters. Your content has 100,140 characters.'
     )
 
     await expect(HomePage.getDisplayedErrorSummaryMessage()).toHaveText(
-      'Text content too long. Maximum 100000 characters. Your content has 100140 characters.'
+      'Text content too long. The maximum is 100,000 characters. Your content has 100,140 characters.'
     )
 
     await expect(HomePage.getCharacterCountMessage()).toHaveText(
@@ -137,11 +137,11 @@ describe('URL Upload Validations', () => {
     await HomePage.clickReviewContent()
 
     await expect(HomePage.getDisplayedURLErrorMessage()).toHaveText(
-      'Extracted text is too long. Maximum 100000 characters. The webpage has 781684 characters'
+      'The extracted text is too long. The maximum is 100,000 characters. This page has 781,684 characters.'
     )
 
     await expect(HomePage.getDisplayedErrorSummaryMessage()).toHaveText(
-      'Extracted text is too long. Maximum 100000 characters. The webpage has 781684 characters'
+      'The extracted text is too long. The maximum is 100,000 characters. This page has 781,684 characters.'
     )
   })
 })
