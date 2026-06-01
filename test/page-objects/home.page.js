@@ -435,16 +435,28 @@ class HomePage extends Page {
     await this.paginationInfo.waitForDisplayed()
 
     const text = await this.paginationInfo.getText()
-    const match = text.match(/Showing\s+\d+\s+to\s+(\d+)\s+of\s+(\d+)/i)
 
-    if (!match) {
-      throw new Error(`Unexpected pagination text: ${text}`)
+    let match = text.match(/Showing\s+(\d+)\s+to\s+(\d+)\s+of\s+(\d+)/i)
+
+    if (match) {
+      return {
+        start: Number(match[1]),
+        shown: Number(match[2]),
+        total: Number(match[3])
+      }
     }
 
-    return {
-      shown: Number(match[1]),
-      total: Number(match[2])
+    match = text.match(/Showing\s+(\d+)\s+of\s+(\d+)/i)
+
+    if (match) {
+      return {
+        start: 1,
+        shown: Number(match[1]),
+        total: Number(match[2])
+      }
     }
+
+    throw new Error(`Unexpected pagination text: ${text}`)
   }
 
   async waitForPaginationToChange(previousShown) {
@@ -461,57 +473,41 @@ class HomePage extends Page {
   }
 
   async applyFilterAndValidatePagination(limit) {
-    //  Apply filter
     await this.selectReviewLimit(limit)
 
-    // Wait for pagination info to appear
-    await this.paginationInfo.waitForDisplayed({ timeout: 60000 })
+    await this.paginationInfo.waitForDisplayed({
+      timeout: 60000
+    })
 
     let pageNumber = 1
+    let { start, shown, total } = await this.getPaginationCounts()
 
-    // Read initial pagination state
-    let { shown, total } = await this.getPaginationCounts()
-
-    // Edge case: no reviews
     if (total === 0) {
       return
     }
 
     const expectedPageSize = 25
-
-    // Pagination loop
     while (true) {
-      // Rows on current page
       const rows = await this.reviewRows
       const rowCount = rows.length
 
-      // Calculate expected rows for this page
-      const remainingRecords = total - (shown - rowCount)
       const expectedRowsOnPage =
-        remainingRecords >= expectedPageSize
-          ? expectedPageSize
-          : remainingRecords
+        total < expectedPageSize ? total : shown - start + 1
 
-      // Assertion
       expect(rowCount).toBe(
         expectedRowsOnPage,
         `Page ${pageNumber} expected ${expectedRowsOnPage} rows but found ${rowCount}`
       )
 
-      // Stop condition
       if (shown >= total) {
         break
       }
-
-      // Go to next page
       await this.nextPageButton.waitForClickable()
+      const previousShown = shown
       await this.nextPageButton.click()
 
-      // Wait until pagination advances
-      await this.waitForPaginationToChange(shown)
-
-      // Update pagination state
-      ;({ shown, total } = await this.getPaginationCounts())
+      await this.waitForPaginationToChange(previousShown)
+      ;({ start, shown, total } = await this.getPaginationCounts())
 
       pageNumber++
     }
